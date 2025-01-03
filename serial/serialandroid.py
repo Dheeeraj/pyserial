@@ -1,6 +1,5 @@
 import time
 from serial.android import get_android_context
-from android.hardware.usb import UsbManager
 from com.hoho.android.usbserial.driver import UsbSerialProber, UsbSerialPort
 from java.lang import UnsupportedOperationException
 from serial.serialutil import SerialBase, SerialException
@@ -31,14 +30,6 @@ class Serial(SerialBase):
         self.mik3yPort.open(connection)
         self._reconfigure_port()
         self.is_open = True
-
-    # def _reconfigurePort(self):
-    #     if not self.mik3yPort:
-    #         raise SerialException("Can only operate on a valid port handle")
-
-    #     self.mik3yPort.setParameters(self._baudrate, self._bytesize, self._stopbits, self._parity)
-    #     self.mik3yPort.setDTR(True)
-    #     self.mik3yPort.setRTS(True)
 
     def _reconfigure_port(self):
         if not self.mik3yPort:
@@ -88,12 +79,12 @@ class Serial(SerialBase):
     def _update_rts_state(self):
         if not self.mik3yPort:
             raise SerialException("Port not open")
-        self.mik3yPort.setRTS(self._rts_state)
+        self.mik3yPort.setRTS(bool(self._rts_state))
 
     def _update_dtr_state(self):
         if not self.mik3yPort:
             raise SerialException("Port not open")
-        self.mik3yPort.setDTR(self._dtr_state)
+        self.mik3yPort.setDTR(bool(self._dtr_state))
 
     def close(self):
         if self.is_open:
