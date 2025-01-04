@@ -2,7 +2,7 @@ import time
 from serial.android import get_android_context
 from com.hoho.android.usbserial.driver import UsbSerialProber, UsbSerialPort
 from java.lang import UnsupportedOperationException
-from serial.serialutil import SerialBase, SerialException
+from serial.serialutil import SerialBase, SerialException, PortNotOpenError
 
 
 class Serial(SerialBase):
@@ -12,19 +12,17 @@ class Serial(SerialBase):
             raise SerialException("Port must be configured before it can be used.")
         if self.is_open:
             raise SerialException("Port is already open.")
-
         context = get_android_context()
         usb_manager = context.getSystemService(context.USB_SERVICE)
         available_drivers = UsbSerialProber.getDefaultProber().findAllDrivers(usb_manager)
-
         if not available_drivers:
             raise SerialException("No USB serial device found.")
 
         self.driver = available_drivers.get(0)
         connection = usb_manager.openDevice(self.driver.getDevice())
-
         if connection is None:
             raise SerialException("Could not open connection to device.")
+        self.fd = connection.getFileDescriptor()
 
         self.mik3yPort = self.driver.getPorts().get(0)
         self.mik3yPort.open(connection)
@@ -134,6 +132,15 @@ class Serial(SerialBase):
         self.mik3yPort.setBreak(True)
         time.sleep(duration)
         self.mik3yPort.setBreak(False)
+
+    def fileno(self):
+        """\
+        For easier use of the serial port instance with select.
+        WARNING: this function is not portable to different platforms!
+        """
+        if not self.is_open:
+            raise PortNotOpenError()
+        return self.fd
 
     @property
     def in_waiting(self):
